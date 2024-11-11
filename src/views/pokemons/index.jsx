@@ -4,11 +4,18 @@ import { Link } from "react-router-dom";
 
 export default function PostIndexPokemon() {
   const [pokemons, setPosts] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchDataPosts = async () => {
-    await api.get("/api/pokemons").then((response) => {
+    setLoading(true);
+    try {
+      const response = await api.get("/api/pokemons");
       setPosts(response.data.data.data);
-    });
+    } catch (error) {
+      console.error("Error fetching data:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -16,9 +23,12 @@ export default function PostIndexPokemon() {
   }, []);
 
   const deletePost = async (id) => {
-    await api.delete(`/api/pokemons/${id}`).then(() => {
+    try {
+      await api.delete(`/api/pokemons/${id}`);
       fetchDataPosts();
-    });
+    } catch (error) {
+      console.error("Error deleting post:", error);
+    }
   };
 
   return (
@@ -30,9 +40,19 @@ export default function PostIndexPokemon() {
         ADD NEW POKEMON
       </Link>
       <div className="row">
-        {pokemons.length > 0 ? (
+        {loading ? (
+          <div className="col-12 text-center">
+            <div className="spinner-border" role="status">
+              <span className="visually-hidden">Loading...</span>
+            </div>
+          </div>
+        ) : pokemons.length > 0 ? (
           pokemons.map((pokemon, index) => (
-            <PokemonCard key={index} pokemon={pokemon} deletePost={deletePost} />
+            <PokemonCard
+              key={index}
+              pokemon={pokemon}
+              deletePost={deletePost}
+            />
           ))
         ) : (
           <div className="col-12">
@@ -55,18 +75,21 @@ function PokemonCard({ pokemon, deletePost }) {
 
   return (
     <div className="col-md-3 mb-4">
-      <div className="card border-0 rounded shadow" style={{ maxHeight: isExpanded ? "100%" : "450px" }}>
+      <div
+        className="card border-0 rounded shadow"
+        style={{ minHeight: "450px", height: isExpanded ? "auto" : "450px" }}
+      >
         <img
           className="card-img-top"
           src={pokemon.image}
           alt={pokemon.name}
           style={{
             width: "100%",
-            height: "200px", // Set height sesuai kebutuhan
+            height: "200px",
             objectFit: "cover",
           }}
         />
-        <div className="card-body">
+        <div className="card-body d-flex flex-column justify-content-between">
           <h5 className="card-title">{pokemon.name}</h5>
           <p className="card-text">
             <strong>Ability:</strong> {pokemon.ability}
@@ -80,18 +103,20 @@ function PokemonCard({ pokemon, deletePost }) {
               {isExpanded ? "Sembunyikan" : "Lihat Selengkapnya"}
             </span>
           </p>
-          <Link
-            to={`/pokemons/edit/${pokemon.id}`}
-            className="btn btn-primary me-2"
-          >
-            EDIT
-          </Link>
-          <button
-            onClick={() => deletePost(pokemon.id)}
-            className="btn btn-danger"
-          >
-            DELETE
-          </button>
+          <div>
+            <Link
+              to={`/pokemons/edit/${pokemon.id}`}
+              className="btn btn-primary me-2"
+            >
+              EDIT
+            </Link>
+            <button
+              onClick={() => deletePost(pokemon.id)}
+              className="btn btn-danger"
+            >
+              DELETE
+            </button>
+          </div>
         </div>
       </div>
     </div>
